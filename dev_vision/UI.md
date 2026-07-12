@@ -29,7 +29,7 @@ A simple list that user will be able to filter.
 The Day-Strearks list will be a grid of 3x3 that display the icons of the Day Streaks.
 Each cell contains one time of DaySteak with a badge to the side of it that displays the amount of available streaks for the user to use in case of a relapse.
 
-## Motification manager
+## Notification manager
 
 The should display a simple list of notifications for the user to manage.
 It will have the basic CRUD operations for the user.
