@@ -31,11 +31,18 @@ Each cell contains one time of DaySteak with a badge to the side of it that disp
 
 ## Motification manager
 
-(WIP)
+The should display a simple list of notifications for the user to manage.
+It will have the basic CRUD operations for the user.
+
+To create a new notification or edit an existing one, the user will open a sheet form for the notification.
 
 # Widget Counter
 
-(WIP)
+This widget should display to the user, in real time, the amount of days, hours, and seconds that passed since he begin the noFap.
+What makes the UI special, is the fact that the look of the font of the digits that pass change to look more "cool" as the timer incearses the amount of time the user remains in the noFap.
 
+---
 
+# Note about the UI design
 
+There's a log more to talk about, so we'll create a dedicated Github issue for each screen

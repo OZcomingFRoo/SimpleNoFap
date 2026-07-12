@@ -18,21 +18,17 @@ The value "StartNoFapAt" is the crurial part of the app
 ## Schedule Notifications
 
 This will be a Database table that keeps all the notifications
-The purpose of the notifications can go about 2 ways:
-
-1st, is make the user aware to not give in to the urge at hours where he's most susceptible to relapse.
+The purpose of the notifications is make the user aware to not give in to the urge at hours where he's most susceptible to relapse.
 Words of encouragement and warning should accompany the user.
-
-2nd, is a notification when user passages a certain time in his NoFap challnge.
-e.g. - user managed to not urge for more than 3 weeks, notify a message of encouragement ("Just 1 more week for a month!")
 
 Columns:
 
-- NotifyAt required (Datetime column)
+- NotifyAtDayOfTheWeek required (int column that represents 1-7 days of the week)
+- NotifyAtTime required (time column)
 - Message required (string. if not set by, default to a generated message by a presets of messages that are mutli-lang)
 - Title optional (string)
-- NotificationType required (Enum: Aware (warn user to not give in susceptible hours) and Encouragement)
 - Icon (Enum of icons)
+- Active (Boolean for turning on/off the notification)
 
 ## DayStreak (rewards that can be used)
 
