@@ -15,5 +15,8 @@ data class ScheduledNotificationEntity(
     val customMessage: String?,
     val titlePresetKey: String?,
     val customTitle: String?,
-    val active: Boolean
+    val active: Boolean,
+    val soundEnabled: Boolean = true,
+    val notificationSoundUri: String? = null,
+    val notificationSoundDisplayName: String? = null
 )

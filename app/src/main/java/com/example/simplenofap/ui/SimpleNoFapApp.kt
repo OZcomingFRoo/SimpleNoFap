@@ -61,6 +61,7 @@ fun SimpleNoFapApp(
     val scope = rememberCoroutineScope()
     var currentDestination by remember { mutableStateOf(DrawerDestination.Main) }
     var currentMainTab by remember { mutableStateOf(MainTab.Counter) }
+    var addNotificationRequest by remember { mutableStateOf(0) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -93,6 +94,16 @@ fun SimpleNoFapApp(
                         ) {
                             MenuIcon()
                         }
+                    },
+                    actions = {
+                        if (currentDestination == DrawerDestination.Notifications) {
+                            IconButton(
+                                onClick = { addNotificationRequest++ },
+                                modifier = Modifier.semantics { contentDescription = strings.addNotification }
+                            ) {
+                                Text("+", style = MaterialTheme.typography.headlineMedium)
+                            }
+                        }
                     }
                 )
             },
@@ -112,6 +123,7 @@ fun SimpleNoFapApp(
                 )
 
                 DrawerDestination.Notifications -> NotificationsScreen(
+                    addRequest = addNotificationRequest,
                     modifier = Modifier.padding(innerPadding)
                 )
 

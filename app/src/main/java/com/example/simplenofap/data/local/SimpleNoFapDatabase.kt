@@ -4,13 +4,15 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
         ScheduledNotificationEntity::class,
         DayStreakRewardEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class SimpleNoFapDatabase : RoomDatabase() {
@@ -29,7 +31,15 @@ abstract class SimpleNoFapDatabase : RoomDatabase() {
                     context.applicationContext,
                     SimpleNoFapDatabase::class.java,
                     DatabaseName
-                ).build().also { instance = it }
+                ).addMigrations(Migration1To2).build().also { instance = it }
+            }
+        }
+
+        val Migration1To2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE scheduled_notifications ADD COLUMN soundEnabled INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE scheduled_notifications ADD COLUMN notificationSoundUri TEXT")
+                db.execSQL("ALTER TABLE scheduled_notifications ADD COLUMN notificationSoundDisplayName TEXT")
             }
         }
     }

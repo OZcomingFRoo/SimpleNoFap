@@ -9,11 +9,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ScheduledNotificationDao {
-    @Query("SELECT * FROM scheduled_notifications ORDER BY active DESC, daysOfWeekMask ASC, timeMinutesOfDay ASC")
+    @Query("SELECT * FROM scheduled_notifications ORDER BY timeMinutesOfDay ASC, id ASC")
     fun observeAll(): Flow<List<ScheduledNotificationEntity>>
 
-    @Query("SELECT * FROM scheduled_notifications WHERE active = 1 ORDER BY daysOfWeekMask ASC, timeMinutesOfDay ASC")
+    @Query("SELECT * FROM scheduled_notifications WHERE active = 1 ORDER BY timeMinutesOfDay ASC, id ASC")
     fun observeActive(): Flow<List<ScheduledNotificationEntity>>
+
+    @Query("SELECT * FROM scheduled_notifications WHERE active = 1 ORDER BY timeMinutesOfDay ASC, id ASC")
+    suspend fun getActive(): List<ScheduledNotificationEntity>
 
     @Query("SELECT * FROM scheduled_notifications WHERE id = :id")
     suspend fun getById(id: Long): ScheduledNotificationEntity?

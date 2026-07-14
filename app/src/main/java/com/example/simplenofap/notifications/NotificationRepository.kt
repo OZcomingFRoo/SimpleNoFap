@@ -17,6 +17,9 @@ class NotificationRepository(
         return dao.observeActive().map { notifications -> notifications.map { it.toDomain() } }
     }
 
+    suspend fun getActiveScheduledNotifications(): List<ScheduledNotification> =
+        dao.getActive().map { it.toDomain() }
+
     suspend fun getScheduledNotification(id: Long): ScheduledNotification? {
         return dao.getById(id)?.toDomain()
     }
@@ -34,7 +37,10 @@ class NotificationRepository(
                 customMessage = input.customMessage,
                 titlePresetKey = input.titlePresetKey,
                 customTitle = input.customTitle,
-                active = input.active
+                active = input.active,
+                soundEnabled = input.soundEnabled,
+                notificationSoundUri = input.notificationSoundUri,
+                notificationSoundDisplayName = input.notificationSoundDisplayName
             )
         )
     }
@@ -69,7 +75,10 @@ private fun ScheduledNotificationEntity.toDomain(): ScheduledNotification {
         customMessage = customMessage,
         titlePresetKey = titlePresetKey,
         customTitle = customTitle,
-        active = active
+        active = active,
+        soundEnabled = soundEnabled,
+        notificationSoundUri = notificationSoundUri,
+        notificationSoundDisplayName = notificationSoundDisplayName
     )
 }
 
@@ -84,6 +93,9 @@ private fun ScheduledNotification.toEntity(): ScheduledNotificationEntity {
         customMessage = customMessage,
         titlePresetKey = titlePresetKey,
         customTitle = customTitle,
-        active = active
+        active = active,
+        soundEnabled = soundEnabled,
+        notificationSoundUri = notificationSoundUri,
+        notificationSoundDisplayName = notificationSoundDisplayName
     )
 }
