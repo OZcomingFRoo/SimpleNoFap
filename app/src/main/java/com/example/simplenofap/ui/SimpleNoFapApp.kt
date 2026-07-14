@@ -1,8 +1,6 @@
 package com.example.simplenofap.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
@@ -12,8 +10,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,6 +32,10 @@ import com.example.simplenofap.localization.AppStrings
 import com.example.simplenofap.localization.LocalAppStrings
 import com.example.simplenofap.settings.LanguagePreference
 import com.example.simplenofap.settings.ThemePreference
+import com.example.simplenofap.ui.main.MainBottomBar
+import com.example.simplenofap.ui.main.MainScreen
+import com.example.simplenofap.ui.main.MainTab
+import com.example.simplenofap.ui.notifications.NotificationsScreen
 import com.example.simplenofap.ui.settings.SettingsScreen
 import kotlinx.coroutines.launch
 
@@ -43,11 +43,6 @@ private enum class DrawerDestination {
     Main,
     Notifications,
     Settings
-}
-
-private enum class MainTab {
-    Counter,
-    DayStreaks
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,9 +111,7 @@ fun SimpleNoFapApp(
                     modifier = Modifier.padding(innerPadding)
                 )
 
-                DrawerDestination.Notifications -> PlaceholderScreen(
-                    title = strings.notifications,
-                    body = strings.notificationsPlaceholder,
+                DrawerDestination.Notifications -> NotificationsScreen(
                     modifier = Modifier.padding(innerPadding)
                 )
 
@@ -189,81 +182,10 @@ private fun AppDrawer(
     }
 }
 
-@Composable
-private fun MainBottomBar(
-    currentTab: MainTab,
-    onTabSelected: (MainTab) -> Unit
-) {
-    val strings = LocalAppStrings.current
-
-    NavigationBar {
-        MainTab.entries.forEach { tab ->
-            NavigationBarItem(
-                selected = tab == currentTab,
-                onClick = { onTabSelected(tab) },
-                label = { Text(tab.title(strings)) },
-                icon = {}
-            )
-        }
-    }
-}
-
-@Composable
-private fun MainScreen(
-    currentTab: MainTab,
-    modifier: Modifier = Modifier
-) {
-    val strings = LocalAppStrings.current
-
-    when (currentTab) {
-        MainTab.Counter -> PlaceholderScreen(
-            title = strings.counter,
-            body = strings.counterPlaceholder,
-            modifier = modifier
-        )
-
-        MainTab.DayStreaks -> PlaceholderScreen(
-            title = strings.dayStreaks,
-            body = strings.dayStreaksPlaceholder,
-            modifier = modifier
-        )
-    }
-}
-
-@Composable
-private fun PlaceholderScreen(
-    title: String,
-    body: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
 private fun DrawerDestination.title(strings: AppStrings): String {
     return when (this) {
         DrawerDestination.Main -> strings.main
         DrawerDestination.Notifications -> strings.notifications
         DrawerDestination.Settings -> strings.settings
-    }
-}
-
-private fun MainTab.title(strings: AppStrings): String {
-    return when (this) {
-        MainTab.Counter -> strings.counter
-        MainTab.DayStreaks -> strings.dayStreaks
     }
 }
