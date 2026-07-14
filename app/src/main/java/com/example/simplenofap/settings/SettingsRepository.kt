@@ -15,6 +15,7 @@ private const val SettingsDataStoreName = "settings"
 private val Context.settingsDataStore by preferencesDataStore(name = SettingsDataStoreName)
 
 data class AppSettings(
+    val userName: String = "",
     val languagePreference: LanguagePreference = LanguagePreference.System,
     val themePreference: ThemePreference = ThemePreference.System
 )
@@ -23,6 +24,7 @@ class SettingsRepository(
     private val context: Context
 ) {
     private object Keys {
+        val UserName = stringPreferencesKey("user_name")
         val Language = stringPreferencesKey("language")
         val Theme = stringPreferencesKey("theme")
     }
@@ -44,10 +46,17 @@ class SettingsRepository(
                 ?: ThemePreference.System
 
             AppSettings(
+                userName = preferences[Keys.UserName].orEmpty(),
                 languagePreference = language,
                 themePreference = theme
             )
         }
+
+    suspend fun setUserName(userName: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.UserName] = userName
+        }
+    }
 
     suspend fun setLanguagePreference(languagePreference: LanguagePreference) {
         context.settingsDataStore.edit { preferences ->

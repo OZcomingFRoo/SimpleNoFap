@@ -47,8 +47,14 @@ class MainActivity : ComponentActivity() {
                     LocalLayoutDirection provides resolvedLanguage.layoutDirection
                 ) {
                     SimpleNoFapApp(
+                        userName = settings.userName,
                         languagePreference = settings.languagePreference,
                         themePreference = settings.themePreference,
+                        onUserNameSaved = { userName ->
+                            scope.launch {
+                                settingsRepository.setUserName(userName)
+                            }
+                        },
                         onLanguagePreferenceChanged = { languagePreference ->
                             scope.launch {
                                 settingsRepository.setLanguagePreference(languagePreference)

@@ -1,14 +1,9 @@
 package com.example.simplenofap.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,7 +15,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,6 +36,7 @@ import com.example.simplenofap.localization.AppStrings
 import com.example.simplenofap.localization.LocalAppStrings
 import com.example.simplenofap.settings.LanguagePreference
 import com.example.simplenofap.settings.ThemePreference
+import com.example.simplenofap.ui.settings.SettingsScreen
 import kotlinx.coroutines.launch
 
 private enum class DrawerDestination {
@@ -58,8 +53,10 @@ private enum class MainTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SimpleNoFapApp(
+    userName: String,
     languagePreference: LanguagePreference,
     themePreference: ThemePreference,
+    onUserNameSaved: (String) -> Unit,
     onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
     onThemePreferenceChanged: (ThemePreference) -> Unit,
     modifier: Modifier = Modifier
@@ -126,8 +123,10 @@ fun SimpleNoFapApp(
                 )
 
                 DrawerDestination.Settings -> SettingsScreen(
+                    userName = userName,
                     languagePreference = languagePreference,
                     themePreference = themePreference,
+                    onUserNameSaved = onUserNameSaved,
                     onLanguagePreferenceChanged = onLanguagePreferenceChanged,
                     onThemePreferenceChanged = onThemePreferenceChanged,
                     modifier = Modifier.padding(innerPadding)
@@ -232,82 +231,6 @@ private fun MainScreen(
 }
 
 @Composable
-private fun SettingsScreen(
-    languagePreference: LanguagePreference,
-    themePreference: ThemePreference,
-    onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
-    onThemePreferenceChanged: (ThemePreference) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val strings = LocalAppStrings.current
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        Text(
-            text = strings.settings,
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Text(
-            text = strings.settingsPlaceholder,
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = strings.theme,
-            style = MaterialTheme.typography.titleMedium
-        )
-        ThemePreference.entries.forEach { option ->
-            OptionRow(
-                label = option.label(strings),
-                selected = option == themePreference,
-                onClick = { onThemePreferenceChanged(option) }
-            )
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = strings.language,
-            style = MaterialTheme.typography.titleMedium
-        )
-        LanguagePreference.entries.forEach { option ->
-            OptionRow(
-                label = option.label(strings),
-                selected = option == languagePreference,
-                onClick = { onLanguagePreferenceChanged(option) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun OptionRow(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = onClick
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = 12.dp)
-        )
-    }
-}
-
-@Composable
 private fun PlaceholderScreen(
     title: String,
     body: String,
@@ -342,21 +265,5 @@ private fun MainTab.title(strings: AppStrings): String {
     return when (this) {
         MainTab.Counter -> strings.counter
         MainTab.DayStreaks -> strings.dayStreaks
-    }
-}
-
-private fun LanguagePreference.label(strings: AppStrings): String {
-    return when (this) {
-        LanguagePreference.English -> strings.languageEnglish
-        LanguagePreference.Hebrew -> strings.languageHebrew
-        LanguagePreference.System -> strings.languageSystem
-    }
-}
-
-private fun ThemePreference.label(strings: AppStrings): String {
-    return when (this) {
-        ThemePreference.Light -> strings.themeLight
-        ThemePreference.Dark -> strings.themeDark
-        ThemePreference.System -> strings.themeSystem
     }
 }
