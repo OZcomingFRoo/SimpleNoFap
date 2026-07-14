@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Issue Capture"
+  short_description: "Capture GitHub issues with attachments"
+  default_prompt: "Use $github-issue-capture to capture GitHub issue #3 into local context files."
