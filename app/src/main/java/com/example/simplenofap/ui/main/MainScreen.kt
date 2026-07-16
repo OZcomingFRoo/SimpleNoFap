@@ -35,10 +35,18 @@ internal fun MainBottomBar(
 @Composable
 internal fun MainScreen(
     currentTab: MainTab,
+    startedAtEpochMillis: Long?,
+    onStartTimeChanged: (Long) -> Unit,
+    onResetToNow: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (currentTab) {
-        MainTab.Counter -> CounterScreen(modifier = modifier)
+        MainTab.Counter -> CounterScreen(
+            startedAtEpochMillis = startedAtEpochMillis,
+            onStartTimeChanged = onStartTimeChanged,
+            onResetToNow = onResetToNow,
+            modifier = modifier
+        )
         MainTab.DayStreaks -> DayStreaksScreen(modifier = modifier)
     }
 }

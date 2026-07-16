@@ -3,6 +3,8 @@ package com.example.simplenofap.localization
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.simplenofap.settings.LanguagePreference
+import com.example.simplenofap.counter.CounterUnitLabels
+import com.example.simplenofap.counter.EnglishCounterUnitLabels
 import java.util.Locale
 
 enum class ResolvedLanguage(
@@ -75,6 +77,16 @@ data class AppStrings(
     val allowExactAlarms: String,
     val notificationError: String,
     val notificationDefaultBody: String,
+    val myStreak: String,
+    val changeStartTime: String,
+    val resetToNow: String,
+    val resetCounterTitle: String,
+    val resetCounterBody: String,
+    val confirmReset: String,
+    val counterStartedAt: String,
+    val counterAccessibility: (Long, Long, Long, Long) -> String,
+    val startTimeFutureError: String,
+    val counterUnitLabels: CounterUnitLabels,
     val weekdayInitials: List<String>,
     val weekdayNames: List<String>
 )
@@ -165,6 +177,18 @@ private val EnglishStrings = AppStrings(
     allowExactAlarms = "Alarms & reminders",
     notificationError = "Something went wrong. Please try again.",
     notificationDefaultBody = "Keep going!",
+    myStreak = "My streak",
+    changeStartTime = "Change start time",
+    resetToNow = "Reset to now",
+    resetCounterTitle = "Reset your streak?",
+    resetCounterBody = "Your counter will restart from zero. This cannot be undone.",
+    confirmReset = "Reset",
+    counterStartedAt = "Started",
+    counterAccessibility = { days, hours, minutes, seconds ->
+        "Streak: $days days, $hours hours, $minutes minutes, $seconds seconds"
+    },
+    startTimeFutureError = "Choose a time that is not in the future.",
+    counterUnitLabels = EnglishCounterUnitLabels,
     weekdayInitials = listOf("S", "M", "T", "W", "T", "F", "S"),
     weekdayNames = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
 )
@@ -232,6 +256,27 @@ private val HebrewStrings = AppStrings(
     allowExactAlarms = "התראות ותזכורות",
     notificationError = "משהו השתבש. נסו שוב.",
     notificationDefaultBody = "ממשיכים קדימה!",
+    myStreak = "הרצף שלי",
+    changeStartTime = "שינוי זמן ההתחלה",
+    resetToNow = "איפוס לעכשיו",
+    resetCounterTitle = "לאפס את הרצף?",
+    resetCounterBody = "המונה יתחיל מחדש מאפס. לא ניתן לבטל פעולה זו.",
+    confirmReset = "איפוס",
+    counterStartedAt = "התחלה",
+    counterAccessibility = { days, hours, minutes, seconds ->
+        "רצף: $days ימים, $hours שעות, $minutes דקות, $seconds שניות"
+    },
+    startTimeFutureError = "יש לבחור זמן שאינו בעתיד.",
+    counterUnitLabels = CounterUnitLabels(
+        year = "שנה",
+        years = "שנים",
+        month = "חודש",
+        months = "חודשים",
+        week = "שבוע",
+        weeks = "שבועות",
+        day = "יום",
+        days = "ימים"
+    ),
     weekdayInitials = listOf("א", "ב", "ג", "ד", "ה", "ו", "ש"),
     weekdayNames = listOf("יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת")
 )

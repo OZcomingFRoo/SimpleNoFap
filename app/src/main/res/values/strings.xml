@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SimpleNoFap</string>
+    <string name="widget_label">My streak</string>
+    <string name="widget_description">A live view of your SimpleNoFap streak</string>
 </resources>

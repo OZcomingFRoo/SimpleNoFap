@@ -17,6 +17,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,9 +50,13 @@ private enum class DrawerDestination {
 @Composable
 fun SimpleNoFapApp(
     userName: String,
+    startedAtEpochMillis: Long?,
     languagePreference: LanguagePreference,
     themePreference: ThemePreference,
+    openCounterRequest: Int,
     onUserNameSaved: (String) -> Unit,
+    onStartTimeChanged: (Long) -> Unit,
+    onResetToNow: () -> Unit,
     onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
     onThemePreferenceChanged: (ThemePreference) -> Unit,
     modifier: Modifier = Modifier
@@ -62,6 +67,14 @@ fun SimpleNoFapApp(
     var currentDestination by remember { mutableStateOf(DrawerDestination.Main) }
     var currentMainTab by remember { mutableStateOf(MainTab.Counter) }
     var addNotificationRequest by remember { mutableStateOf(0) }
+
+    LaunchedEffect(openCounterRequest) {
+        if (openCounterRequest > 0) {
+            currentDestination = DrawerDestination.Main
+            currentMainTab = MainTab.Counter
+            drawerState.close()
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -119,6 +132,9 @@ fun SimpleNoFapApp(
             when (currentDestination) {
                 DrawerDestination.Main -> MainScreen(
                     currentTab = currentMainTab,
+                    startedAtEpochMillis = startedAtEpochMillis,
+                    onStartTimeChanged = onStartTimeChanged,
+                    onResetToNow = onResetToNow,
                     modifier = Modifier.padding(innerPadding)
                 )
 
