@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.simplenofap.daystreaks.DayStreakType
 import com.example.simplenofap.localization.AppStrings
 import com.example.simplenofap.localization.LocalAppStrings
 import com.example.simplenofap.settings.LanguagePreference
@@ -54,9 +55,10 @@ fun SimpleNoFapApp(
     languagePreference: LanguagePreference,
     themePreference: ThemePreference,
     openCounterRequest: Int,
+    openDayStreaksRequest: Int,
+    highlightedDayStreakType: DayStreakType?,
     onUserNameSaved: (String) -> Unit,
     onStartTimeChanged: (Long) -> Unit,
-    onResetToNow: () -> Unit,
     onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
     onThemePreferenceChanged: (ThemePreference) -> Unit,
     modifier: Modifier = Modifier
@@ -72,6 +74,14 @@ fun SimpleNoFapApp(
         if (openCounterRequest > 0) {
             currentDestination = DrawerDestination.Main
             currentMainTab = MainTab.Counter
+            drawerState.close()
+        }
+    }
+
+    LaunchedEffect(openDayStreaksRequest) {
+        if (openDayStreaksRequest > 0) {
+            currentDestination = DrawerDestination.Main
+            currentMainTab = MainTab.DayStreaks
             drawerState.close()
         }
     }
@@ -134,7 +144,8 @@ fun SimpleNoFapApp(
                     currentTab = currentMainTab,
                     startedAtEpochMillis = startedAtEpochMillis,
                     onStartTimeChanged = onStartTimeChanged,
-                    onResetToNow = onResetToNow,
+                    highlightedDayStreakType = highlightedDayStreakType,
+                    dayStreakHighlightRequest = openDayStreaksRequest,
                     modifier = Modifier.padding(innerPadding)
                 )
 

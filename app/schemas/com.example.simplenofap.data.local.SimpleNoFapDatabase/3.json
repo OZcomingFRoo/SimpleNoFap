@@ -1,0 +1,188 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "985d045114fbff1e38b85efba16a1b3b",
+    "entities": [
+      {
+        "tableName": "scheduled_notifications",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `daysOfWeekMask` INTEGER NOT NULL, `timeMinutesOfDay` INTEGER NOT NULL, `messagePresetKey` TEXT, `customMessage` TEXT, `titlePresetKey` TEXT, `customTitle` TEXT, `active` INTEGER NOT NULL, `soundEnabled` INTEGER NOT NULL, `notificationSoundUri` TEXT, `notificationSoundDisplayName` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "createdAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMillis",
+            "columnName": "updatedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "daysOfWeekMask",
+            "columnName": "daysOfWeekMask",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeMinutesOfDay",
+            "columnName": "timeMinutesOfDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "messagePresetKey",
+            "columnName": "messagePresetKey",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "customMessage",
+            "columnName": "customMessage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "titlePresetKey",
+            "columnName": "titlePresetKey",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "customTitle",
+            "columnName": "customTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "active",
+            "columnName": "active",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "soundEnabled",
+            "columnName": "soundEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notificationSoundUri",
+            "columnName": "notificationSoundUri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notificationSoundDisplayName",
+            "columnName": "notificationSoundDisplayName",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "day_streak_rewards",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `streakType` TEXT NOT NULL, `achievedAtEpochMillis` INTEGER NOT NULL, `usedAtEpochMillis` INTEGER, `sourceStreakStartAtEpochMillis` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "createdAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMillis",
+            "columnName": "updatedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "streakType",
+            "columnName": "streakType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "achievedAtEpochMillis",
+            "columnName": "achievedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "usedAtEpochMillis",
+            "columnName": "usedAtEpochMillis",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sourceStreakStartAtEpochMillis",
+            "columnName": "sourceStreakStartAtEpochMillis",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_day_streak_rewards_streakType",
+            "unique": false,
+            "columnNames": [
+              "streakType"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_day_streak_rewards_streakType` ON `${TABLE_NAME}` (`streakType`)"
+          },
+          {
+            "name": "index_day_streak_rewards_achievedAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "achievedAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_day_streak_rewards_achievedAtEpochMillis` ON `${TABLE_NAME}` (`achievedAtEpochMillis`)"
+          },
+          {
+            "name": "index_day_streak_rewards_usedAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "usedAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_day_streak_rewards_usedAtEpochMillis` ON `${TABLE_NAME}` (`usedAtEpochMillis`)"
+          },
+          {
+            "name": "index_day_streak_rewards_streakType_sourceStreakStartAtEpochMillis",
+            "unique": true,
+            "columnNames": [
+              "streakType",
+              "sourceStreakStartAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_day_streak_rewards_streakType_sourceStreakStartAtEpochMillis` ON `${TABLE_NAME}` (`streakType`, `sourceStreakStartAtEpochMillis`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '985d045114fbff1e38b85efba16a1b3b')"
+    ]
+  }
+}

@@ -9,7 +9,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["streakType"]),
         Index(value = ["achievedAtEpochMillis"]),
-        Index(value = ["usedAtEpochMillis"])
+        Index(value = ["usedAtEpochMillis"]),
+        Index(value = ["streakType", "sourceStreakStartAtEpochMillis"], unique = true)
     ]
 )
 data class DayStreakRewardEntity(

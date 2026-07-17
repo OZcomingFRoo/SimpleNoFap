@@ -24,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,6 +58,8 @@ import com.example.simplenofap.counter.HOUR_MILLIS
 import com.example.simplenofap.counter.MINUTE_MILLIS
 import com.example.simplenofap.counter.SECOND_MILLIS
 import com.example.simplenofap.counter.calculateCounter
+import com.example.simplenofap.daystreaks.DayStreakType
+import com.example.simplenofap.daystreaks.dayStreakName
 import com.example.simplenofap.localization.LocalAppStrings
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -69,6 +72,8 @@ internal fun CounterScreen(
     startedAtEpochMillis: Long?,
     onStartTimeChanged: (Long) -> Unit,
     onResetToNow: () -> Unit,
+    dayStreaksUiState: DayStreaksUiState? = null,
+    onUseDayStreakReward: (DayStreakType, () -> Unit) -> Unit = { _, onSuccess -> onSuccess() },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -88,6 +93,8 @@ internal fun CounterScreen(
             }(context)
         },
         onResetToNow = onResetToNow,
+        dayStreaksUiState = dayStreaksUiState,
+        onUseDayStreakReward = onUseDayStreakReward,
         validationError = validationError,
         modifier = modifier
     )
@@ -98,6 +105,8 @@ internal fun CounterContent(
     startedAtEpochMillis: Long?,
     onChangeStartTime: () -> Unit,
     onResetToNow: () -> Unit,
+    dayStreaksUiState: DayStreaksUiState? = null,
+    onUseDayStreakReward: (DayStreakType, () -> Unit) -> Unit = { _, onSuccess -> onSuccess() },
     validationError: String? = null,
     nowProvider: () -> Long = System::currentTimeMillis,
     modifier: Modifier = Modifier
@@ -105,6 +114,9 @@ internal fun CounterContent(
     val strings = LocalAppStrings.current
     var nowEpochMillis by remember(startedAtEpochMillis) { mutableLongStateOf(nowProvider()) }
     var showResetConfirmation by remember { mutableStateOf(false) }
+    var selectedRewardType by remember(dayStreaksUiState?.availableRewards) {
+        mutableStateOf(dayStreaksUiState?.availableRewards?.firstOrNull()?.type)
+    }
 
     LaunchedEffect(startedAtEpochMillis) {
         while (true) {
@@ -171,7 +183,7 @@ internal fun CounterContent(
         }
     }
 
-    if (showResetConfirmation) {
+    if (showResetConfirmation && dayStreaksUiState == null) {
         AlertDialog(
             onDismissRequest = { showResetConfirmation = false },
             title = { Text(strings.resetCounterTitle) },
@@ -193,7 +205,112 @@ internal fun CounterContent(
                 }
             }
         )
+    } else if (showResetConfirmation && dayStreaksUiState != null) {
+        RelapseDialog(
+            uiState = dayStreaksUiState,
+            selectedRewardType = selectedRewardType,
+            onSelectedRewardType = { selectedRewardType = it },
+            onUseReward = {
+                val selected = selectedRewardType ?: return@RelapseDialog
+                onUseDayStreakReward(selected) {
+                    showResetConfirmation = false
+                }
+            },
+            onResetAnyway = {
+                showResetConfirmation = false
+                onResetToNow()
+            },
+            onDismiss = { showResetConfirmation = false }
+        )
     }
+}
+
+@Composable
+private fun RelapseDialog(
+    uiState: DayStreaksUiState,
+    selectedRewardType: DayStreakType?,
+    onSelectedRewardType: (DayStreakType) -> Unit,
+    onUseReward: () -> Unit,
+    onResetAnyway: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val strings = LocalAppStrings.current
+    val cooldownRemaining = uiState.cooldownAvailableAtEpochMillis
+        ?.minus(uiState.nowEpochMillis)
+        ?.takeIf { it > 0L }
+    val usableRewards = uiState.availableRewards
+    val body = when {
+        cooldownRemaining != null -> strings.relapseCooldownBody(formatRemaining(strings, cooldownRemaining))
+        usableRewards.isEmpty() -> strings.relapseNoRewardBody
+        else -> strings.relapseUseRewardBody
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(strings.relapseTitle) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(body)
+                if (cooldownRemaining == null && usableRewards.isNotEmpty()) {
+                    usableRewards.forEach { reward ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
+                                selected = selectedRewardType == reward.type,
+                                onClick = { onSelectedRewardType(reward.type) }
+                            )
+                            Text(
+                                text = "${strings.dayStreakName(reward.type)} (${reward.availableCount})",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+                if (uiState.errorMessageVisible) {
+                    Text(
+                        text = strings.rewardUseFailed,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (cooldownRemaining == null && usableRewards.isNotEmpty()) {
+                TextButton(
+                    onClick = onUseReward,
+                    enabled = selectedRewardType != null,
+                    modifier = Modifier.semantics { testTag = "counter_use_reward" }
+                ) {
+                    Text(strings.useReward)
+                }
+            } else {
+                TextButton(
+                    onClick = onResetAnyway,
+                    modifier = Modifier.semantics { testTag = "counter_confirm_reset" }
+                ) {
+                    Text(strings.confirmReset)
+                }
+            }
+        },
+        dismissButton = {
+            Row {
+                if (cooldownRemaining == null && usableRewards.isNotEmpty()) {
+                    TextButton(
+                        onClick = onResetAnyway,
+                        modifier = Modifier.semantics { testTag = "counter_confirm_reset" }
+                    ) {
+                        Text(strings.resetAnyway)
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(strings.cancel)
+                }
+            }
+        }
+    )
 }
 
 @Composable

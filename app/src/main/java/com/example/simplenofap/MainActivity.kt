@@ -15,6 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
+import com.example.simplenofap.daystreaks.AndroidDayStreakAlarmScheduler
+import com.example.simplenofap.daystreaks.DayStreakReconciler
+import com.example.simplenofap.daystreaks.DayStreakType
+import com.example.simplenofap.daystreaks.dayStreakRepository
 import com.example.simplenofap.localization.LocalAppStrings
 import com.example.simplenofap.localization.resolveLanguagePreference
 import com.example.simplenofap.localization.stringsFor
@@ -31,13 +35,21 @@ import com.example.simplenofap.notifications.notificationRepository
 
 class MainActivity : ComponentActivity() {
     private var openCounterRequest by mutableIntStateOf(0)
+    private var openDayStreaksRequest by mutableIntStateOf(0)
+    private var highlightedDayStreakType: DayStreakType? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         lifecycleScope.launch {
-            SettingsRepository(applicationContext).initializeStartTimeIfAbsent()
+            val settingsRepository = SettingsRepository(applicationContext)
+            settingsRepository.initializeStartTimeIfAbsent()
+            DayStreakReconciler(
+                settingsRepository,
+                applicationContext.dayStreakRepository()
+            ).reconcile()
+            AndroidDayStreakAlarmScheduler(applicationContext).reconcile(settingsRepository)
             AndroidNotificationScheduler(applicationContext)
                 .reconcile(applicationContext.notificationRepository())
             CounterWidgetUpdater.refreshAll(applicationContext)
@@ -70,6 +82,8 @@ class MainActivity : ComponentActivity() {
                         languagePreference = settings.languagePreference,
                         themePreference = settings.themePreference,
                         openCounterRequest = openCounterRequest,
+                        openDayStreaksRequest = openDayStreaksRequest,
+                        highlightedDayStreakType = highlightedDayStreakType,
                         onUserNameSaved = { userName ->
                             scope.launch {
                                 settingsRepository.setUserName(userName)
@@ -78,12 +92,11 @@ class MainActivity : ComponentActivity() {
                         onStartTimeChanged = { startedAtEpochMillis ->
                             scope.launch {
                                 settingsRepository.setStartNoFapAtEpochMillis(startedAtEpochMillis)
-                                CounterWidgetUpdater.refreshAll(applicationContext)
-                            }
-                        },
-                        onResetToNow = {
-                            scope.launch {
-                                settingsRepository.resetStartNoFapToNow()
+                                DayStreakReconciler(
+                                    settingsRepository,
+                                    applicationContext.dayStreakRepository()
+                                ).reconcile()
+                                AndroidDayStreakAlarmScheduler(applicationContext).reconcile(settingsRepository)
                                 CounterWidgetUpdater.refreshAll(applicationContext)
                             }
                         },
@@ -119,6 +132,18 @@ class MainActivity : ComponentActivity() {
             openCounterRequest++
             intent.removeExtra(EXTRA_OPEN_COUNTER)
         }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_DAY_STREAKS, false) == true) {
+            highlightedDayStreakType = intent.getStringExtra(EXTRA_DAY_STREAK_HIGHLIGHT_TYPE)
+                ?.let { runCatching { DayStreakType.valueOf(it) }.getOrNull() }
+            openDayStreaksRequest++
+            intent.removeExtra(EXTRA_OPEN_DAY_STREAKS)
+            intent.removeExtra(EXTRA_DAY_STREAK_HIGHLIGHT_TYPE)
+        }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_DAY_STREAKS = "open_day_streaks"
+        const val EXTRA_DAY_STREAK_HIGHLIGHT_TYPE = "day_streak_highlight_type"
     }
 }
 

@@ -20,10 +20,10 @@ class DayStreakRepositoryTest {
         repository.insertReward(reward(type = DayStreakType.OneWeek, usedAtEpochMillis = null))
         repository.insertReward(reward(type = DayStreakType.OneWeek, usedAtEpochMillis = 2_000))
         repository.insertReward(reward(type = DayStreakType.OneWeek, usedAtEpochMillis = null))
-        repository.insertReward(reward(type = DayStreakType.TwoWeeks, usedAtEpochMillis = null))
+        repository.insertReward(reward(type = DayStreakType.ThreeWeeks, usedAtEpochMillis = null))
 
         assertEquals(2, repository.getUnusedCount(DayStreakType.OneWeek))
-        assertEquals(1, repository.observeUnusedCount(DayStreakType.TwoWeeks).first())
+        assertEquals(1, repository.observeUnusedCount(DayStreakType.ThreeWeeks).first())
     }
 
     @Test
@@ -59,6 +59,40 @@ class DayStreakRepositoryTest {
     @Test
     fun dayStreakReward_isAvailableWhenUsedAtIsNull() {
         assertTrue(reward(usedAtEpochMillis = null).isAvailable)
+    }
+
+    @Test
+    fun consumeOldestAvailableReward_usesFifoWithinSelectedType() = runBlocking {
+        val dao = FakeDayStreakRewardDao()
+        val repository = DayStreakRepository(dao, currentTimeMillis = { 10_000 })
+        repository.insertReward(reward(type = DayStreakType.OneWeek, achievedAtEpochMillis = 200))
+        repository.insertReward(reward(type = DayStreakType.OneWeek, achievedAtEpochMillis = 100))
+
+        val result = repository.consumeOldestAvailableReward(DayStreakType.OneWeek, 10_000)
+
+        assertTrue(result is DayStreakConsumeResult.Consumed)
+        assertEquals(100L, (result as DayStreakConsumeResult.Consumed).reward.achievedAtEpochMillis)
+        assertEquals(1, repository.getUnusedCount(DayStreakType.OneWeek))
+    }
+
+    @Test
+    fun consumeOldestAvailableReward_enforcesGlobalCooldownAndAllowsExactBoundary() = runBlocking {
+        val dao = FakeDayStreakRewardDao()
+        val repository = DayStreakRepository(dao, currentTimeMillis = { 1 })
+        repository.insertReward(reward(type = DayStreakType.ThreeDays, usedAtEpochMillis = 1_000))
+        repository.insertReward(reward(type = DayStreakType.OneWeek, achievedAtEpochMillis = 2_000))
+
+        val blocked = repository.consumeOldestAvailableReward(
+            DayStreakType.OneWeek,
+            1_000 + DayStreakRepository.CooldownMillis - 1
+        )
+        val allowed = repository.consumeOldestAvailableReward(
+            DayStreakType.OneWeek,
+            1_000 + DayStreakRepository.CooldownMillis
+        )
+
+        assertTrue(blocked is DayStreakConsumeResult.Cooldown)
+        assertTrue(allowed is DayStreakConsumeResult.Consumed)
     }
 
     private fun reward(
@@ -105,6 +139,26 @@ private class FakeDayStreakRewardDao : DayStreakRewardDao {
         return rewards.value.count { it.streakType == streakType && it.usedAtEpochMillis == null }
     }
 
+    override fun observeAvailableCountsByType(): Flow<List<com.example.simplenofap.data.local.DayStreakRewardTypeCount>> {
+        return rewards.map { rewardList ->
+            rewardList
+                .filter { it.usedAtEpochMillis == null }
+                .groupingBy { it.streakType }
+                .eachCount()
+                .map { (type, count) ->
+                    com.example.simplenofap.data.local.DayStreakRewardTypeCount(type, count)
+                }
+        }
+    }
+
+    override fun observeLatestUsedAtEpochMillis(): Flow<Long?> {
+        return rewards.map { rewardList -> rewardList.mapNotNull { it.usedAtEpochMillis }.maxOrNull() }
+    }
+
+    override suspend fun getLatestUsedAtEpochMillis(): Long? {
+        return rewards.value.mapNotNull { it.usedAtEpochMillis }.maxOrNull()
+    }
+
     override fun observeLastAwarded(limit: Int): Flow<List<DayStreakRewardEntity>> {
         return rewards.map { rewardList ->
             rewardList
@@ -126,7 +180,22 @@ private class FakeDayStreakRewardDao : DayStreakRewardDao {
         return rewards.value.firstOrNull { it.id == id }
     }
 
+    override suspend fun getOldestUnusedByType(streakType: String): DayStreakRewardEntity? {
+        return rewards.value
+            .filter { it.streakType == streakType && it.usedAtEpochMillis == null }
+            .minWithOrNull(compareBy<DayStreakRewardEntity> { it.achievedAtEpochMillis }.thenBy { it.id })
+    }
+
     override suspend fun insert(reward: DayStreakRewardEntity): Long {
+        if (
+            reward.sourceStreakStartAtEpochMillis != null &&
+            rewards.value.any {
+                it.streakType == reward.streakType &&
+                    it.sourceStreakStartAtEpochMillis == reward.sourceStreakStartAtEpochMillis
+            }
+        ) {
+            return -1
+        }
         val assignedId = if (reward.id == 0L) nextId++ else reward.id
         rewards.value += reward.copy(id = assignedId)
         return assignedId
@@ -145,7 +214,7 @@ private class FakeDayStreakRewardDao : DayStreakRewardDao {
     ): Int {
         var changed = false
         rewards.value = rewards.value.map { reward ->
-            if (reward.id == id) {
+            if (reward.id == id && reward.usedAtEpochMillis == null) {
                 changed = true
                 reward.copy(
                     usedAtEpochMillis = usedAtEpochMillis,

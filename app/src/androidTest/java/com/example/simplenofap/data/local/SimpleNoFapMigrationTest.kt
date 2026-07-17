@@ -33,4 +33,23 @@ class SimpleNoFapMigrationTest {
             }
         }
     }
+
+    @Test fun migrate2To3_removesLegacyRewardsAndCreatesUniqueIndex() {
+        helper.createDatabase("migration-test-2-3", 2).apply {
+            execSQL("INSERT INTO day_streak_rewards (createdAtEpochMillis, updatedAtEpochMillis, streakType, achievedAtEpochMillis, usedAtEpochMillis, sourceStreakStartAtEpochMillis) VALUES (1, 1, 'ThreeDays', 10, NULL, 100)")
+            execSQL("INSERT INTO day_streak_rewards (createdAtEpochMillis, updatedAtEpochMillis, streakType, achievedAtEpochMillis, usedAtEpochMillis, sourceStreakStartAtEpochMillis) VALUES (2, 2, 'TwoWeeks', 20, NULL, 100)")
+            execSQL("INSERT INTO day_streak_rewards (createdAtEpochMillis, updatedAtEpochMillis, streakType, achievedAtEpochMillis, usedAtEpochMillis, sourceStreakStartAtEpochMillis) VALUES (3, 3, 'ThreeMonths', 30, NULL, 100)")
+            close()
+        }
+        helper.runMigrationsAndValidate("migration-test-2-3", 3, true, SimpleNoFapDatabase.Migration2To3).use { db ->
+            db.query("SELECT COUNT(*) FROM day_streak_rewards").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals(1, cursor.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = 'index_day_streak_rewards_streakType_sourceStreakStartAtEpochMillis'").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals(1, cursor.getInt(0))
+            }
+        }
+    }
 }

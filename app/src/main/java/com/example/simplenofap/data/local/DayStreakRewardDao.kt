@@ -2,6 +2,7 @@ package com.example.simplenofap.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,15 @@ interface DayStreakRewardDao {
     @Query("SELECT COUNT(*) FROM day_streak_rewards WHERE streakType = :streakType AND usedAtEpochMillis IS NULL")
     suspend fun getUnusedCountByType(streakType: String): Int
 
+    @Query("SELECT streakType, COUNT(*) AS count FROM day_streak_rewards WHERE usedAtEpochMillis IS NULL GROUP BY streakType")
+    fun observeAvailableCountsByType(): Flow<List<DayStreakRewardTypeCount>>
+
+    @Query("SELECT MAX(usedAtEpochMillis) FROM day_streak_rewards WHERE usedAtEpochMillis IS NOT NULL")
+    fun observeLatestUsedAtEpochMillis(): Flow<Long?>
+
+    @Query("SELECT MAX(usedAtEpochMillis) FROM day_streak_rewards WHERE usedAtEpochMillis IS NOT NULL")
+    suspend fun getLatestUsedAtEpochMillis(): Long?
+
     @Query("SELECT * FROM day_streak_rewards ORDER BY achievedAtEpochMillis DESC LIMIT :limit")
     fun observeLastAwarded(limit: Int): Flow<List<DayStreakRewardEntity>>
 
@@ -29,13 +39,16 @@ interface DayStreakRewardDao {
     @Query("SELECT * FROM day_streak_rewards WHERE id = :id")
     suspend fun getById(id: Long): DayStreakRewardEntity?
 
-    @Insert
+    @Query("SELECT * FROM day_streak_rewards WHERE streakType = :streakType AND usedAtEpochMillis IS NULL ORDER BY achievedAtEpochMillis ASC, id ASC LIMIT 1")
+    suspend fun getOldestUnusedByType(streakType: String): DayStreakRewardEntity?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(reward: DayStreakRewardEntity): Long
 
     @Update
     suspend fun update(reward: DayStreakRewardEntity)
 
-    @Query("UPDATE day_streak_rewards SET usedAtEpochMillis = :usedAtEpochMillis, updatedAtEpochMillis = :updatedAtEpochMillis WHERE id = :id")
+    @Query("UPDATE day_streak_rewards SET usedAtEpochMillis = :usedAtEpochMillis, updatedAtEpochMillis = :updatedAtEpochMillis WHERE id = :id AND usedAtEpochMillis IS NULL")
     suspend fun markUsed(id: Long, usedAtEpochMillis: Long, updatedAtEpochMillis: Long): Int
 
     @Query("UPDATE day_streak_rewards SET usedAtEpochMillis = NULL, updatedAtEpochMillis = :updatedAtEpochMillis WHERE id = :id")
@@ -44,3 +57,8 @@ interface DayStreakRewardDao {
     @Query("DELETE FROM day_streak_rewards WHERE id = :id")
     suspend fun deleteById(id: Long): Int
 }
+
+data class DayStreakRewardTypeCount(
+    val streakType: String,
+    val count: Int
+)

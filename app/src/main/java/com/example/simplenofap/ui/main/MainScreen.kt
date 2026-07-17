@@ -4,7 +4,12 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.simplenofap.daystreaks.DayStreakType
 import com.example.simplenofap.localization.AppStrings
 import com.example.simplenofap.localization.LocalAppStrings
 
@@ -37,17 +42,33 @@ internal fun MainScreen(
     currentTab: MainTab,
     startedAtEpochMillis: Long?,
     onStartTimeChanged: (Long) -> Unit,
-    onResetToNow: () -> Unit,
+    highlightedDayStreakType: DayStreakType?,
+    dayStreakHighlightRequest: Int,
     modifier: Modifier = Modifier
 ) {
+    val dayStreaksViewModel: DayStreaksViewModel = viewModel()
+    val dayStreaksUiState by dayStreaksViewModel.uiState.collectAsState()
+
+    LaunchedEffect(dayStreakHighlightRequest, highlightedDayStreakType) {
+        if (dayStreakHighlightRequest > 0) {
+            dayStreaksViewModel.highlight(highlightedDayStreakType)
+        }
+    }
+
     when (currentTab) {
         MainTab.Counter -> CounterScreen(
             startedAtEpochMillis = startedAtEpochMillis,
             onStartTimeChanged = onStartTimeChanged,
-            onResetToNow = onResetToNow,
+            onResetToNow = dayStreaksViewModel::resetToNow,
+            dayStreaksUiState = dayStreaksUiState,
+            onUseDayStreakReward = dayStreaksViewModel::consumeReward,
             modifier = modifier
         )
-        MainTab.DayStreaks -> DayStreaksScreen(modifier = modifier)
+        MainTab.DayStreaks -> DayStreaksScreen(
+            uiState = dayStreaksUiState,
+            onDismissCelebration = dayStreaksViewModel::dismissCelebration,
+            modifier = modifier
+        )
     }
 }
 
