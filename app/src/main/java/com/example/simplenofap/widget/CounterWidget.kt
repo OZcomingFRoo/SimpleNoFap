@@ -140,6 +140,7 @@ object CounterWidgetUpdater {
             elapsedRealtimeMillis = SystemClock.elapsedRealtime(),
             nowEpochMillis = System.currentTimeMillis()
         )
+        val usesStackedLayout = presentation.usesStackedWidgetLayout()
         val openAppIntent = Intent(context, MainActivity::class.java).apply {
             putExtra(EXTRA_OPEN_COUNTER, true)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -166,7 +167,7 @@ object CounterWidgetUpdater {
         )
         views.setViewVisibility(
             R.id.widget_duration_summary,
-            if (presentation.usesStackedLayout) View.VISIBLE else View.GONE
+            if (usesStackedLayout) View.VISIBLE else View.GONE
         )
         views.setChronometer(
             R.id.widget_chronometer,
@@ -177,7 +178,7 @@ object CounterWidgetUpdater {
         views.setTextViewTextSize(
             R.id.widget_chronometer,
             android.util.TypedValue.COMPLEX_UNIT_SP,
-            if (presentation.usesStackedLayout) 34f else 36f
+            if (usesStackedLayout) 34f else 36f
         )
         views.setInt(
             R.id.widget_root,

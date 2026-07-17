@@ -5,7 +5,9 @@ import com.example.simplenofap.counter.HOUR_MILLIS
 import com.example.simplenofap.counter.MINUTE_MILLIS
 import com.example.simplenofap.counter.calculateCounter
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CounterWidgetLogicTest {
@@ -23,16 +25,22 @@ class CounterWidgetLogicTest {
     }
 
     @Test
-    fun afterDayUsesDayRemainderAndExactStaticPrefix() {
-        val now = start + 9L * DAY_MILLIS + 2L * HOUR_MILLIS
+    fun afterDayUsesDayRemainderWithoutInlineDayPrefix() {
+        val now = start + 2L * DAY_MILLIS + 2L * HOUR_MILLIS
         val state = stateAt(now)
 
         assertEquals(elapsedRealtime - 2L * HOUR_MILLIS, state.baseElapsedRealtimeMillis)
         assertEquals("0%s", state.format)
         assertEquals(
-            start + 9L * DAY_MILLIS + 10L * HOUR_MILLIS,
+            start + 2L * DAY_MILLIS + 10L * HOUR_MILLIS,
             state.nextRefreshEpochMillis
         )
+    }
+
+    @Test
+    fun stackedWidgetLayoutStartsAtOneDay() {
+        assertFalse(calculateCounter(start, start + DAY_MILLIS - 1L).usesStackedWidgetLayout())
+        assertTrue(calculateCounter(start, start + DAY_MILLIS).usesStackedWidgetLayout())
     }
 
     @Test

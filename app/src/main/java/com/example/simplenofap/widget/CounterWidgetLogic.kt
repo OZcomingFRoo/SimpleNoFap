@@ -10,6 +10,10 @@ data class WidgetChronometerState(
     val nextRefreshEpochMillis: Long?
 )
 
+internal fun CounterPresentation.usesStackedWidgetLayout(): Boolean {
+    return elapsedMillis >= DAY_MILLIS
+}
+
 fun calculateWidgetChronometerState(
     presentation: CounterPresentation,
     elapsedRealtimeMillis: Long,
@@ -43,7 +47,11 @@ fun calculateWidgetChronometerState(
 
     return WidgetChronometerState(
         baseElapsedRealtimeMillis = elapsedRealtimeMillis - presentation.liveRemainderMillis,
-        format = presentation.staticPrefix + hourPadding + "%s",
+        format = if (presentation.usesStackedWidgetLayout()) {
+            hourPadding + "%s"
+        } else {
+            presentation.staticPrefix + hourPadding + "%s"
+        },
         nextRefreshEpochMillis = nextRefresh
     )
 }
