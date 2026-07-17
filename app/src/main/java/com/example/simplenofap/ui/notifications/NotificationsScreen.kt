@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,9 +55,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -211,7 +215,6 @@ private fun NotificationRow(
 @Composable
 private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewModel: NotificationsViewModel) {
     val context = LocalContext.current
-    var confirmDelete by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     val ringtoneLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -236,13 +239,7 @@ private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewMode
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text(if (draft.original == null) strings.newNotification else strings.editNotification) },
-                        navigationIcon = { TextButton(onClick = ::attemptClose) { Text(strings.cancel) } },
-                        actions = {
-                            draft.original?.let { TextButton(onClick = { confirmDelete = true }) {
-                                Text(strings.delete, color = MaterialTheme.colorScheme.error)
-                            } }
-                        }
+                        title = { Text(if (draft.original == null) strings.newNotification else strings.editNotification) }
                     )
                 },
                 bottomBar = {
@@ -302,9 +299,6 @@ private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewMode
         }
     }
 
-    if (confirmDelete) ConfirmDialog(strings.deleteNotificationTitle, strings.deleteNotificationBody, strings.delete, strings.cancel, {
-        confirmDelete = false; viewModel.delete()
-    }, { confirmDelete = false })
     if (confirmDiscard) ConfirmDialog(strings.discardChangesTitle, strings.discardChangesBody, strings.discard, strings.keepEditing, {
         confirmDiscard = false; viewModel.closeEditor()
     }, { confirmDiscard = false })
@@ -312,10 +306,12 @@ private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewMode
 
 @Composable
 private fun TimeWheel(hour: Int, minute: Int, viewModel: NotificationsViewModel) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        NumberWheel(24, hour) { value -> viewModel.updateDraft { it.copy(hour = value) } }
-        Text(":", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(horizontal = 12.dp))
-        NumberWheel(60, minute) { value -> viewModel.updateDraft { it.copy(minute = value) } }
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            NumberWheel(24, hour) { value -> viewModel.updateDraft { it.copy(hour = value) } }
+            Text(":", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(horizontal = 12.dp))
+            NumberWheel(60, minute) { value -> viewModel.updateDraft { it.copy(minute = value) } }
+        }
     }
 }
 
@@ -327,7 +323,7 @@ private fun NumberWheel(count: Int, selected: Int, onSelect: (Int) -> Unit) {
             val chosen = value == selected
             Box(
                 Modifier.fillMaxWidth().height(52.dp)
-                    .background(if (chosen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+                    .background(if (chosen) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, RoundedCornerShape(16.dp))
                     .clickable { onSelect(value) },
                 contentAlignment = Alignment.Center
             ) {
