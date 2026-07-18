@@ -149,7 +149,7 @@ internal class DayStreaksViewModel(application: Application) : AndroidViewModel(
                 processedMask = processedDayStreakMilestonesMask
             )
         }
-        val currentAttemptId = dayStreakAttemptId ?: startedAt
+        val currentRewardSourceId = startedAt
         val achievements = DayStreakMilestones.all.map { metadata ->
             val bit = DayStreakMilestones.bitFor(metadata.type)
             DayStreakAchievementUiState(
@@ -158,7 +158,7 @@ internal class DayStreaksViewModel(application: Application) : AndroidViewModel(
                 availableCount = rewards.counts[metadata.type] ?: 0,
                 earnedInCurrentAttempt = rewards.rewards.any {
                     it.streakType == metadata.type &&
-                        it.sourceStreakStartAtEpochMillis == currentAttemptId
+                        it.sourceStreakStartAtEpochMillis == currentRewardSourceId
                 },
                 processedInCurrentAttempt = processedDayStreakMilestonesMask and bit != 0
             )

@@ -40,7 +40,7 @@ class DayStreakReconciler(
         val rewardId = rewardRepository.grantReward(
             type = grantedType,
             achievedAtEpochMillis = nowEpochMillis,
-            sourceStreakStartAtEpochMillis = attemptId
+            sourceStreakStartAtEpochMillis = startedAt
         )
         settingsRepository.setProcessedDayStreakMilestonesMask(newMask)
         if (rewardId > 0L) {

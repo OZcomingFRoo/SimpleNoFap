@@ -62,6 +62,44 @@ class DayStreakRepositoryTest {
     }
 
     @Test
+    fun grantReward_allowsSameTypeForDifferentSourceStarts() = runBlocking {
+        val dao = FakeDayStreakRewardDao()
+        val repository = DayStreakRepository(dao)
+
+        val firstId = repository.grantReward(
+            type = DayStreakType.ThreeDays,
+            sourceStreakStartAtEpochMillis = 100
+        )
+        val secondId = repository.grantReward(
+            type = DayStreakType.ThreeDays,
+            sourceStreakStartAtEpochMillis = 200
+        )
+
+        assertEquals(2, repository.getUnusedCount(DayStreakType.ThreeDays))
+        assertTrue(firstId > 0)
+        assertTrue(secondId > 0)
+    }
+
+    @Test
+    fun grantReward_ignoresDuplicateTypeForSameSourceStart() = runBlocking {
+        val dao = FakeDayStreakRewardDao()
+        val repository = DayStreakRepository(dao)
+
+        val firstId = repository.grantReward(
+            type = DayStreakType.ThreeDays,
+            sourceStreakStartAtEpochMillis = 100
+        )
+        val duplicateId = repository.grantReward(
+            type = DayStreakType.ThreeDays,
+            sourceStreakStartAtEpochMillis = 100
+        )
+
+        assertEquals(1, repository.getUnusedCount(DayStreakType.ThreeDays))
+        assertTrue(firstId > 0)
+        assertEquals(-1, duplicateId)
+    }
+
+    @Test
     fun consumeOldestAvailableReward_usesFifoWithinSelectedType() = runBlocking {
         val dao = FakeDayStreakRewardDao()
         val repository = DayStreakRepository(dao, currentTimeMillis = { 10_000 })
