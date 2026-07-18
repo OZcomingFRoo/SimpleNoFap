@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -216,6 +217,7 @@ private fun NotificationRow(
 private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewModel: NotificationsViewModel) {
     val context = LocalContext.current
     var confirmDiscard by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
     val ringtoneLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri: Uri? = if (Build.VERSION.SDK_INT >= 33) {
@@ -243,16 +245,33 @@ private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewMode
                     )
                 },
                 bottomBar = {
-                    Row(
+                    Column(
                         Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surface)
                             .navigationBarsPadding()
                             .padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        OutlinedButton(onClick = ::attemptClose, modifier = Modifier.weight(1f), shape = CircleShape) { Text(strings.cancel) }
-                        Button(onClick = viewModel::save, modifier = Modifier.weight(1f), shape = CircleShape) { Text(strings.save) }
+                        if (draft.original != null) {
+                            OutlinedButton(
+                                onClick = { confirmDelete = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = CircleShape,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Text(strings.delete)
+                            }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedButton(onClick = ::attemptClose, modifier = Modifier.weight(1f), shape = CircleShape) { Text(strings.cancel) }
+                            Button(onClick = viewModel::save, modifier = Modifier.weight(1f), shape = CircleShape) { Text(strings.save) }
+                        }
                     }
                 }
             ) { padding ->
@@ -302,6 +321,10 @@ private fun EditorDialog(draft: NotificationDraft, strings: AppStrings, viewMode
     if (confirmDiscard) ConfirmDialog(strings.discardChangesTitle, strings.discardChangesBody, strings.discard, strings.keepEditing, {
         confirmDiscard = false; viewModel.closeEditor()
     }, { confirmDiscard = false })
+
+    if (confirmDelete) ConfirmDialog(strings.deleteNotificationTitle, strings.deleteNotificationBody, strings.delete, strings.cancel, {
+        confirmDelete = false; viewModel.delete()
+    }, { confirmDelete = false })
 }
 
 @Composable
