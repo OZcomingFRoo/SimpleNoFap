@@ -492,7 +492,28 @@ private fun StartDateTimePickerDialog(
                 }
             }
         ) {
-            DatePicker(state = datePickerState)
+            val datePickerHeadlineDate = datePickerState.selectedDateMillis
+                ?.toDatePickerDate(zone)
+                ?: selectedDate
+            DatePicker(
+                state = datePickerState,
+                title = {
+                    Text(
+                        text = strings.datePickerTitle,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                headline = {
+                    Text(
+                        text = strings.datePickerHeadline(datePickerHeadlineDate),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            )
         }
     }
 

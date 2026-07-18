@@ -5,6 +5,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.example.simplenofap.settings.LanguagePreference
 import com.example.simplenofap.counter.CounterUnitLabels
 import com.example.simplenofap.counter.EnglishCounterUnitLabels
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 enum class ResolvedLanguage(
@@ -127,6 +129,8 @@ data class AppStrings(
     val counterStartedAt: String,
     val counterAccessibility: (Long, Long, Long, Long) -> String,
     val startTimeFutureError: String,
+    val datePickerTitle: String,
+    val datePickerHeadline: (LocalDate) -> String,
     val counterUnitLabels: CounterUnitLabels,
     val weekdayInitials: List<String>,
     val weekdayNames: List<String>
@@ -154,6 +158,9 @@ fun stringsFor(language: ResolvedLanguage): AppStrings {
         ResolvedLanguage.Hebrew -> HebrewStrings
     }
 }
+
+private val EnglishDatePickerHeadlineFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+private val HebrewDatePickerHeadlineFormatter = DateTimeFormatter.ofPattern("d בMMMM yyyy", Locale.forLanguageTag("he"))
 
 private val EnglishStrings = AppStrings(
     appName = "SimpleNoFap",
@@ -270,6 +277,8 @@ private val EnglishStrings = AppStrings(
         "Streak: $days days, $hours hours, $minutes minutes, $seconds seconds"
     },
     startTimeFutureError = "Choose a time that is not in the future.",
+    datePickerTitle = "Select date",
+    datePickerHeadline = { date -> EnglishDatePickerHeadlineFormatter.format(date) },
     counterUnitLabels = EnglishCounterUnitLabels,
     weekdayInitials = listOf("S", "M", "T", "W", "T", "F", "S"),
     weekdayNames = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
@@ -390,6 +399,8 @@ private val HebrewStrings = AppStrings(
         "רצף: $days ימים, $hours שעות, $minutes דקות, $seconds שניות"
     },
     startTimeFutureError = "יש לבחור זמן שאינו בעתיד.",
+    datePickerTitle = "\u05d1\u05d7\u05d9\u05e8\u05ea \u05ea\u05d0\u05e8\u05d9\u05da",
+    datePickerHeadline = { date -> HebrewDatePickerHeadlineFormatter.format(date) },
     counterUnitLabels = CounterUnitLabels(
         year = "שנה",
         years = "שנים",
