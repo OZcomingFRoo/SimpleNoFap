@@ -1,7 +1,5 @@
 package com.example.simplenofap.ui.main
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -22,11 +20,18 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +46,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.testTag
@@ -63,9 +67,12 @@ import com.example.simplenofap.daystreaks.dayStreakName
 import com.example.simplenofap.localization.LocalAppStrings
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Composable
 internal fun CounterScreen(
@@ -76,28 +83,35 @@ internal fun CounterScreen(
     onUseDayStreakReward: (DayStreakType, () -> Unit) -> Unit = { _, onSuccess -> onSuccess() },
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     var validationError by remember { mutableStateOf<String?>(null) }
+    var showDateTimePicker by remember { mutableStateOf(false) }
     val strings = LocalAppStrings.current
 
     CounterContent(
         startedAtEpochMillis = startedAtEpochMillis,
-        onChangeStartTime = {
-            showCurrentDateTimePicker { selectedEpochMillis ->
-                if (selectedEpochMillis <= System.currentTimeMillis()) {
-                    validationError = null
-                    onStartTimeChanged(selectedEpochMillis)
-                } else {
-                    validationError = strings.startTimeFutureError
-                }
-            }(context)
-        },
+        onChangeStartTime = { showDateTimePicker = true },
         onResetToNow = onResetToNow,
         dayStreaksUiState = dayStreaksUiState,
         onUseDayStreakReward = onUseDayStreakReward,
         validationError = validationError,
         modifier = modifier
     )
+
+    if (showDateTimePicker) {
+        StartDateTimePickerDialog(
+            initialEpochMillis = startedAtEpochMillis ?: System.currentTimeMillis(),
+            onDismissRequest = { showDateTimePicker = false },
+            onSelected = { selectedEpochMillis ->
+                showDateTimePicker = false
+                if (selectedEpochMillis <= System.currentTimeMillis()) {
+                    validationError = null
+                    onStartTimeChanged(selectedEpochMillis)
+                } else {
+                    validationError = strings.startTimeFutureError
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -430,36 +444,108 @@ private fun formatStartTime(epochMillis: Long): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(epochMillis))
 }
 
-private fun showCurrentDateTimePicker(
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StartDateTimePickerDialog(
+    initialEpochMillis: Long,
+    onDismissRequest: () -> Unit,
     onSelected: (Long) -> Unit
-): (android.content.Context) -> Unit = { context ->
-    val now = Calendar.getInstance()
-    DatePickerDialog(
-        context,
-        { _, year, month, day ->
-            TimePickerDialog(
-                context,
-                { _, hour, minute ->
-                    val selected = Calendar.getInstance().apply {
-                        set(Calendar.YEAR, year)
-                        set(Calendar.MONTH, month)
-                        set(Calendar.DAY_OF_MONTH, day)
-                        set(Calendar.HOUR_OF_DAY, hour)
-                        set(Calendar.MINUTE, minute)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
+) {
+    val zone = remember { ZoneId.systemDefault() }
+    val initialDateTime = remember(initialEpochMillis, zone) {
+        Instant.ofEpochMilli(initialEpochMillis).atZone(zone)
+    }
+    var selectedDate by remember(initialEpochMillis, zone) {
+        mutableStateOf(initialDateTime.toLocalDate())
+    }
+    var showDatePicker by remember { mutableStateOf(true) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate.toDatePickerMillis(zone),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= System.currentTimeMillis()
+            }
+        }
+    )
+    val strings = LocalAppStrings.current
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = onDismissRequest,
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            selectedDate = it.toDatePickerDate(zone)
+                        }
+                        showDatePicker = false
+                        showTimePicker = true
                     }
-                    onSelected(selected.timeInMillis)
-                },
-                now.get(Calendar.HOUR_OF_DAY),
-                now.get(Calendar.MINUTE),
-                android.text.format.DateFormat.is24HourFormat(context)
-            ).show()
+                ) {
+                    Text(strings.save)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissRequest) {
+                    Text(strings.cancel)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        StartTimePickerDialog(
+            initialTime = initialDateTime.toLocalTime(),
+            onDismissRequest = onDismissRequest,
+            onTimeSelected = { time ->
+                showTimePicker = false
+                onSelected(selectedDate.atTime(time).atZone(zone).toInstant().toEpochMilli())
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StartTimePickerDialog(
+    initialTime: LocalTime,
+    onDismissRequest: () -> Unit,
+    onTimeSelected: (LocalTime) -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute,
+        is24Hour = true
+    )
+    val strings = LocalAppStrings.current
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onTimeSelected(LocalTime.of(timePickerState.hour, timePickerState.minute))
+                }
+            ) {
+                Text(strings.save)
+            }
         },
-        now.get(Calendar.YEAR),
-        now.get(Calendar.MONTH),
-        now.get(Calendar.DAY_OF_MONTH)
-    ).apply {
-        datePicker.maxDate = now.timeInMillis
-    }.show()
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(strings.cancel)
+            }
+        },
+        text = { TimePicker(state = timePickerState) }
+    )
+}
+
+private fun LocalDate.toDatePickerMillis(zone: ZoneId): Long {
+    return atStartOfDay(zone).toInstant().toEpochMilli()
+}
+
+private fun Long.toDatePickerDate(zone: ZoneId): LocalDate {
+    return Instant.ofEpochMilli(this).atZone(zone).toLocalDate()
 }
