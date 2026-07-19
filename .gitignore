@@ -9,4 +9,7 @@
 .cxx
 local.properties
 .ai-issues/
+release-keystore.properties
+keystores/
+*.jks
 app/release/
