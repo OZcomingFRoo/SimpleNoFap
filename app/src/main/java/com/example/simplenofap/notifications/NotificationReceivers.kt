@@ -1,5 +1,6 @@
 package com.example.simplenofap.notifications
 
+import android.app.PendingIntent
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -30,12 +31,63 @@ class NotificationAlarmReceiver : BroadcastReceiver() {
                 val settings = SettingsRepository(context).settings.first()
                 val strings = stringsFor(resolveLanguagePreference(settings.languagePreference))
                 val scheduler = AndroidNotificationScheduler(context)
-                val builder = NotificationCompat.Builder(context, scheduler.channelId(notification))
+                val title = notification.customTitle ?: strings.appName
+                val body = notification.customMessage ?: strings.notificationDefaultBody
+                val presentation = resolveReminderPresentation(
+                    fullScreenEnabled = settings.fullScreenReminderNotificationsEnabled,
+                    canUseFullScreenIntent = context.canUseFullScreenReminderIntent()
+                )
+                val highPriority = presentation != ReminderPresentation.Normal
+                scheduler.createChannel(notification, fullScreenEnabled = highPriority)
+                val contentIntent = PendingIntent.getActivity(
+                    context,
+                    id.toStableInt(),
+                    Intent(context, com.example.simplenofap.MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val builder = NotificationCompat.Builder(
+                    context,
+                    scheduler.channelId(notification, fullScreenEnabled = highPriority)
+                )
                     .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle(notification.customTitle ?: strings.appName)
-                    .setContentText(notification.customMessage ?: strings.notificationDefaultBody)
+                    .setContentTitle(title)
+                    .setContentText(body)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                    .setContentIntent(contentIntent)
                     .setAutoCancel(true)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setPriority(
+                        if (highPriority) {
+                            NotificationCompat.PRIORITY_HIGH
+                        } else {
+                            NotificationCompat.PRIORITY_DEFAULT
+                        }
+                    )
+                if (presentation == ReminderPresentation.FullScreen) {
+                    builder.setFullScreenIntent(
+                        PendingIntent.getActivity(
+                            context,
+                            id.toStableInt(),
+                            Intent(context, ReminderAlertActivity::class.java)
+                                .putExtra(ReminderAlertActivity.ExtraTitle, title)
+                                .putExtra(ReminderAlertActivity.ExtraBody, body),
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        ),
+                        true
+                    )
+                } else if (presentation == ReminderPresentation.HeadsUpFallback) {
+                    builder.addAction(
+                        R.mipmap.ic_launcher,
+                        strings.openAndroidSettings,
+                        PendingIntent.getActivity(
+                            context,
+                            id.toStableInt() xor FullScreenSettingsRequestCodeSalt,
+                            context.fullScreenReminderSettingsIntent(),
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                    )
+                }
                 if (!notification.soundEnabled) builder.setSilent(true)
                 else if (android.os.Build.VERSION.SDK_INT < 26) builder.setSound(resolveSound(context, notification.notificationSoundUri))
                 context.getSystemService(NotificationManager::class.java)
@@ -69,3 +121,5 @@ private fun resolveSound(context: Context, value: String?): Uri = try {
     value?.let(Uri::parse)?.also { context.contentResolver.openAssetFileDescriptor(it, "r")?.close() }
         ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 } catch (_: Exception) { RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION) }
+
+private const val FullScreenSettingsRequestCodeSalt = 0x5F51

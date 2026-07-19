@@ -3,6 +3,7 @@ package com.example.simplenofap.settings
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -25,7 +26,8 @@ data class AppSettings(
     val startNoFapAtEpochMillis: Long? = null,
     val dayStreakAttemptId: Long? = null,
     val processedDayStreakMilestonesMask: Int = 0,
-    val lastCelebratedDayStreakRewardId: Long? = null
+    val lastCelebratedDayStreakRewardId: Long? = null,
+    val fullScreenReminderNotificationsEnabled: Boolean = false
 )
 
 class SettingsRepository(
@@ -40,6 +42,8 @@ class SettingsRepository(
         val DayStreakAttemptId = longPreferencesKey("day_streak_attempt_id")
         val ProcessedDayStreakMilestonesMask = intPreferencesKey("processed_day_streak_milestones_mask")
         val LastCelebratedDayStreakRewardId = longPreferencesKey("last_celebrated_day_streak_reward_id")
+        val FullScreenReminderNotificationsEnabled =
+            booleanPreferencesKey("full_screen_reminder_notifications_enabled")
     }
 
     val settings: Flow<AppSettings> = context.settingsDataStore.data
@@ -67,7 +71,9 @@ class SettingsRepository(
                 processedDayStreakMilestonesMask =
                     preferences[Keys.ProcessedDayStreakMilestonesMask] ?: 0,
                 lastCelebratedDayStreakRewardId =
-                    preferences[Keys.LastCelebratedDayStreakRewardId]
+                    preferences[Keys.LastCelebratedDayStreakRewardId],
+                fullScreenReminderNotificationsEnabled =
+                    preferences[Keys.FullScreenReminderNotificationsEnabled] ?: false
             )
         }
 
@@ -140,6 +146,12 @@ class SettingsRepository(
     suspend fun setThemePreference(themePreference: ThemePreference) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.Theme] = themePreference.name
+        }
+    }
+
+    suspend fun setFullScreenReminderNotificationsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.FullScreenReminderNotificationsEnabled] = enabled
         }
     }
 }

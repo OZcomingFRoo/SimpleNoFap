@@ -29,7 +29,7 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
 
     override fun schedule(notification: ScheduledNotification) {
         if (!notification.active || !canPostNotifications) return
-        createChannel(notification)
+        createChannel(notification, fullScreenEnabled = false)
         val triggerAt = NotificationScheduleCalculator.nextOccurrence(
             notification, ZonedDateTime.now()
         ).toInstant().toEpochMilli()
@@ -56,22 +56,28 @@ class AndroidNotificationScheduler(private val context: Context) : NotificationS
         repository.getActiveScheduledNotifications().forEach { schedule(it) }
     }
 
-    fun channelId(notification: ScheduledNotification): String {
+    fun channelId(notification: ScheduledNotification, fullScreenEnabled: Boolean = false): String {
         val soundKey = if (!notification.soundEnabled) "silent" else
             (notification.notificationSoundUri ?: "default").hashCode().toUInt().toString(16)
-        return "reminder_${notification.id}_$soundKey"
+        val behaviorKey = if (fullScreenEnabled) "fullscreen" else "normal"
+        return "reminder_${notification.id}_${behaviorKey}_$soundKey"
     }
 
-    private fun createChannel(notification: ScheduledNotification) {
+    fun createChannel(notification: ScheduledNotification, fullScreenEnabled: Boolean = false) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val channelId = channelId(notification)
+        val channelId = channelId(notification, fullScreenEnabled)
+        val behaviorPrefix = "reminder_${notification.id}_${if (fullScreenEnabled) "fullscreen" else "normal"}_"
         notificationManager.notificationChannels
-            .filter { it.id.startsWith("reminder_${notification.id}_") && it.id != channelId }
+            .filter { it.id.startsWith(behaviorPrefix) && it.id != channelId }
             .forEach { notificationManager.deleteNotificationChannel(it.id) }
         val channel = NotificationChannel(
             channelId,
             notification.notificationSoundDisplayName ?: context.getString(com.example.simplenofap.R.string.app_name),
-            NotificationManager.IMPORTANCE_DEFAULT
+            if (fullScreenEnabled) {
+                NotificationManager.IMPORTANCE_HIGH
+            } else {
+                NotificationManager.IMPORTANCE_DEFAULT
+            }
         )
         if (!notification.soundEnabled) {
             channel.setSound(null, null)

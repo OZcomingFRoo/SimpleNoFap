@@ -15,6 +15,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -39,6 +40,8 @@ import com.example.simplenofap.widget.CounterWidgetUpdater
 import com.example.simplenofap.widget.EXTRA_OPEN_COUNTER
 import kotlinx.coroutines.launch
 import com.example.simplenofap.notifications.AndroidNotificationScheduler
+import com.example.simplenofap.notifications.canUseFullScreenReminderIntent
+import com.example.simplenofap.notifications.fullScreenReminderSettingsIntent
 import com.example.simplenofap.notifications.notificationRepository
 import java.util.Locale
 
@@ -49,6 +52,7 @@ class MainActivity : ComponentActivity() {
     private var openCounterRequest by mutableIntStateOf(0)
     private var openDayStreaksRequest by mutableIntStateOf(0)
     private var highlightedDayStreakType: DayStreakType? = null
+    private var fullScreenReminderNotificationsAllowed by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +70,7 @@ class MainActivity : ComponentActivity() {
                 .reconcile(applicationContext.notificationRepository())
             CounterWidgetUpdater.refreshAll(applicationContext)
         }
+        refreshFullScreenReminderNotificationAccess()
         handleIntent(intent)
 
         setContent {
@@ -94,6 +99,10 @@ class MainActivity : ComponentActivity() {
                             startedAtEpochMillis = settings.startNoFapAtEpochMillis,
                             languagePreference = settings.languagePreference,
                             themePreference = settings.themePreference,
+                            fullScreenReminderNotificationsEnabled =
+                                settings.fullScreenReminderNotificationsEnabled,
+                            fullScreenReminderNotificationsAllowed =
+                                fullScreenReminderNotificationsAllowed,
                             openCounterRequest = openCounterRequest,
                             openDayStreaksRequest = openDayStreaksRequest,
                             highlightedDayStreakType = highlightedDayStreakType,
@@ -122,6 +131,14 @@ class MainActivity : ComponentActivity() {
                                 scope.launch {
                                     settingsRepository.setThemePreference(themePreference)
                                 }
+                            },
+                            onFullScreenReminderNotificationsChanged = { enabled ->
+                                scope.launch {
+                                    settingsRepository.setFullScreenReminderNotificationsEnabled(enabled)
+                                }
+                            },
+                            onOpenFullScreenNotificationSettings = {
+                                startActivity(applicationContext.fullScreenReminderSettingsIntent())
                             }
                         )
                     }
@@ -138,7 +155,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        refreshFullScreenReminderNotificationAccess()
         CounterWidgetUpdater.refreshAll(applicationContext)
+    }
+
+    private fun refreshFullScreenReminderNotificationAccess() {
+        fullScreenReminderNotificationsAllowed =
+            applicationContext.canUseFullScreenReminderIntent()
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -162,7 +185,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun LocalizedApp(
+internal fun LocalizedApp(
     languagePreference: LanguagePreference,
     resolvedLanguage: ResolvedLanguage,
     content: @Composable () -> Unit
@@ -204,7 +227,7 @@ private fun Configuration.withLocale(locale: Locale): Configuration {
     return Configuration(this).apply { setLocale(locale) }
 }
 
-private fun shouldUseDarkTheme(
+internal fun shouldUseDarkTheme(
     themePreference: ThemePreference,
     systemDarkTheme: Boolean
 ): Boolean {

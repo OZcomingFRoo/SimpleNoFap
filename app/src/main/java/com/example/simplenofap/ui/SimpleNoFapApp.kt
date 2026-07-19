@@ -54,6 +54,8 @@ fun SimpleNoFapApp(
     startedAtEpochMillis: Long?,
     languagePreference: LanguagePreference,
     themePreference: ThemePreference,
+    fullScreenReminderNotificationsEnabled: Boolean,
+    fullScreenReminderNotificationsAllowed: Boolean,
     openCounterRequest: Int,
     openDayStreaksRequest: Int,
     highlightedDayStreakType: DayStreakType?,
@@ -61,6 +63,8 @@ fun SimpleNoFapApp(
     onStartTimeChanged: (Long) -> Unit,
     onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
     onThemePreferenceChanged: (ThemePreference) -> Unit,
+    onFullScreenReminderNotificationsChanged: (Boolean) -> Unit,
+    onOpenFullScreenNotificationSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
@@ -158,9 +162,13 @@ fun SimpleNoFapApp(
                     userName = userName,
                     languagePreference = languagePreference,
                     themePreference = themePreference,
+                    fullScreenReminderNotificationsEnabled = fullScreenReminderNotificationsEnabled,
+                    fullScreenReminderNotificationsAllowed = fullScreenReminderNotificationsAllowed,
                     onUserNameSaved = onUserNameSaved,
                     onLanguagePreferenceChanged = onLanguagePreferenceChanged,
                     onThemePreferenceChanged = onThemePreferenceChanged,
+                    onFullScreenReminderNotificationsChanged = onFullScreenReminderNotificationsChanged,
+                    onOpenFullScreenNotificationSettings = onOpenFullScreenNotificationSettings,
                     modifier = Modifier.padding(innerPadding)
                 )
             }

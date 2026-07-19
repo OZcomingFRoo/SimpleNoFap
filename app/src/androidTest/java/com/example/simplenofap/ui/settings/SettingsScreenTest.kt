@@ -79,6 +79,58 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun reminderNotificationBehaviorDefaultsToNormalAndCanSelectFullScreen() {
+        var fullScreenEnabled: Boolean? = null
+        setEnglishContent(
+            fullScreenReminderNotificationsEnabled = false,
+            onFullScreenReminderNotificationsChanged = { fullScreenEnabled = it }
+        )
+
+        composeRule.onNodeWithTag("reminder_notifications_normal")
+            .performScrollTo()
+            .assertIsSelected()
+        composeRule.onNodeWithTag("reminder_notifications_full_screen").performClick()
+
+        composeRule.runOnIdle { assertEquals(true, fullScreenEnabled) }
+    }
+
+    @Test
+    fun fullScreenWarningAndSettingsActionAppearWhenAccessUnavailable() {
+        var openedSettings = false
+        setEnglishContent(
+            fullScreenReminderNotificationsEnabled = true,
+            fullScreenReminderNotificationsAllowed = false,
+            onOpenFullScreenNotificationSettings = { openedSettings = true }
+        )
+
+        composeRule.onNodeWithTag("full_screen_notifications_warning")
+            .performScrollTo()
+            .assertExists()
+        composeRule.onNodeWithText(
+            "Android is blocking full-screen alerts for this app. Reminders will still appear as high-priority notifications."
+        ).assertExists()
+        composeRule.onNodeWithTag("full_screen_notifications_settings").performClick()
+
+        composeRule.runOnIdle { assertTrue(openedSettings) }
+    }
+
+    @Test
+    fun fullScreenSettingsActionAppearsWhenFullScreenModeIsSelected() {
+        var openedSettings = false
+        setEnglishContent(
+            fullScreenReminderNotificationsEnabled = true,
+            fullScreenReminderNotificationsAllowed = true,
+            onOpenFullScreenNotificationSettings = { openedSettings = true }
+        )
+
+        composeRule.onNodeWithTag("full_screen_notifications_settings")
+            .performScrollTo()
+            .performClick()
+
+        composeRule.runOnIdle { assertTrue(openedSettings) }
+    }
+
+    @Test
     fun aboutUsesLocalizedVersionFallback() {
         setEnglishContent(appVersionName = null)
 
@@ -102,9 +154,13 @@ class SettingsScreenTest {
                         appVersionName = "1.0",
                         languagePreference = LanguagePreference.Hebrew,
                         themePreference = ThemePreference.System,
+                        fullScreenReminderNotificationsEnabled = false,
+                        fullScreenReminderNotificationsAllowed = true,
                         onUserNameSaved = {},
                         onLanguagePreferenceChanged = {},
-                        onThemePreferenceChanged = {}
+                        onThemePreferenceChanged = {},
+                        onFullScreenReminderNotificationsChanged = {},
+                        onOpenFullScreenNotificationSettings = {}
                     )
                 }
             }
@@ -124,9 +180,13 @@ class SettingsScreenTest {
         appVersionName: String? = "1.0",
         themePreference: ThemePreference = ThemePreference.System,
         languagePreference: LanguagePreference = LanguagePreference.System,
+        fullScreenReminderNotificationsEnabled: Boolean = false,
+        fullScreenReminderNotificationsAllowed: Boolean = true,
         onUserNameSaved: (String) -> Unit = {},
         onLanguagePreferenceChanged: (LanguagePreference) -> Unit = {},
-        onThemePreferenceChanged: (ThemePreference) -> Unit = {}
+        onThemePreferenceChanged: (ThemePreference) -> Unit = {},
+        onFullScreenReminderNotificationsChanged: (Boolean) -> Unit = {},
+        onOpenFullScreenNotificationSettings: () -> Unit = {}
     ) {
         val language = ResolvedLanguage.English
         composeRule.setContent {
@@ -140,9 +200,13 @@ class SettingsScreenTest {
                         appVersionName = appVersionName,
                         languagePreference = languagePreference,
                         themePreference = themePreference,
+                        fullScreenReminderNotificationsEnabled = fullScreenReminderNotificationsEnabled,
+                        fullScreenReminderNotificationsAllowed = fullScreenReminderNotificationsAllowed,
                         onUserNameSaved = onUserNameSaved,
                         onLanguagePreferenceChanged = onLanguagePreferenceChanged,
-                        onThemePreferenceChanged = onThemePreferenceChanged
+                        onThemePreferenceChanged = onThemePreferenceChanged,
+                        onFullScreenReminderNotificationsChanged = onFullScreenReminderNotificationsChanged,
+                        onOpenFullScreenNotificationSettings = onOpenFullScreenNotificationSettings
                     )
                 }
             }

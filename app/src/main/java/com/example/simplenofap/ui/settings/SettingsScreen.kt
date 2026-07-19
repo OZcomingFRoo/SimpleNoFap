@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,9 +68,13 @@ fun SettingsScreen(
     userName: String,
     languagePreference: LanguagePreference,
     themePreference: ThemePreference,
+    fullScreenReminderNotificationsEnabled: Boolean,
+    fullScreenReminderNotificationsAllowed: Boolean,
     onUserNameSaved: (String) -> Unit,
     onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
     onThemePreferenceChanged: (ThemePreference) -> Unit,
+    onFullScreenReminderNotificationsChanged: (Boolean) -> Unit,
+    onOpenFullScreenNotificationSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SettingsContent(
@@ -77,9 +82,13 @@ fun SettingsScreen(
         appVersionName = rememberAppVersionName(),
         languagePreference = languagePreference,
         themePreference = themePreference,
+        fullScreenReminderNotificationsEnabled = fullScreenReminderNotificationsEnabled,
+        fullScreenReminderNotificationsAllowed = fullScreenReminderNotificationsAllowed,
         onUserNameSaved = onUserNameSaved,
         onLanguagePreferenceChanged = onLanguagePreferenceChanged,
         onThemePreferenceChanged = onThemePreferenceChanged,
+        onFullScreenReminderNotificationsChanged = onFullScreenReminderNotificationsChanged,
+        onOpenFullScreenNotificationSettings = onOpenFullScreenNotificationSettings,
         modifier = modifier
     )
 }
@@ -90,9 +99,13 @@ internal fun SettingsContent(
     appVersionName: String?,
     languagePreference: LanguagePreference,
     themePreference: ThemePreference,
+    fullScreenReminderNotificationsEnabled: Boolean,
+    fullScreenReminderNotificationsAllowed: Boolean,
     onUserNameSaved: (String) -> Unit,
     onLanguagePreferenceChanged: (LanguagePreference) -> Unit,
     onThemePreferenceChanged: (ThemePreference) -> Unit,
+    onFullScreenReminderNotificationsChanged: (Boolean) -> Unit,
+    onOpenFullScreenNotificationSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
@@ -177,6 +190,20 @@ internal fun SettingsContent(
         }
 
         item {
+            SettingsSection(
+                title = strings.notificationBehavior,
+                supportingText = strings.notificationBehaviorDescription
+            ) {
+                ReminderNotificationBehaviorSelector(
+                    fullScreenEnabled = fullScreenReminderNotificationsEnabled,
+                    fullScreenAllowed = fullScreenReminderNotificationsAllowed,
+                    onFullScreenChanged = onFullScreenReminderNotificationsChanged,
+                    onOpenFullScreenNotificationSettings = onOpenFullScreenNotificationSettings
+                )
+            }
+        }
+
+        item {
             SettingsSection(title = strings.about) {
                 SettingsInfoText(
                     text = strings.appName,
@@ -188,6 +215,48 @@ internal fun SettingsContent(
                 )
                 SettingsInfoText(text = strings.aboutPurpose)
             }
+        }
+    }
+}
+
+@Composable
+private fun ReminderNotificationBehaviorSelector(
+    fullScreenEnabled: Boolean,
+    fullScreenAllowed: Boolean,
+    onFullScreenChanged: (Boolean) -> Unit,
+    onOpenFullScreenNotificationSettings: () -> Unit
+) {
+    val strings = LocalAppStrings.current
+    RadioSettingRow(
+        label = strings.normalReminderNotifications,
+        selected = !fullScreenEnabled,
+        testTag = "reminder_notifications_normal",
+        onClick = { onFullScreenChanged(false) }
+    )
+    RadioSettingRow(
+        label = strings.fullScreenReminderAlerts,
+        selected = fullScreenEnabled,
+        testTag = "reminder_notifications_full_screen",
+        onClick = { onFullScreenChanged(true) }
+    )
+    if (fullScreenEnabled && !fullScreenAllowed) {
+        Text(
+            text = strings.fullScreenPermissionUnavailableWarning,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .testTag("full_screen_notifications_warning")
+        )
+    }
+    if (fullScreenEnabled) {
+        TextButton(
+            onClick = onOpenFullScreenNotificationSettings,
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .testTag("full_screen_notifications_settings")
+        ) {
+            Text(strings.openAndroidSettings)
         }
     }
 }
